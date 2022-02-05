@@ -1,1 +1,4 @@
 *.pem
+/testlog2
+/testlog
+/pidfilex.pid

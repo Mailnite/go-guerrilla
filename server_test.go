@@ -12,10 +12,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/flashmob/go-guerrilla/backends"
-	"github.com/flashmob/go-guerrilla/log"
-	"github.com/flashmob/go-guerrilla/mail"
-	"github.com/flashmob/go-guerrilla/mocks"
+	"github.com/mailnite/go-guerrilla/backends"
+	"github.com/mailnite/go-guerrilla/log"
+	"github.com/mailnite/go-guerrilla/mail"
+	"github.com/mailnite/go-guerrilla/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

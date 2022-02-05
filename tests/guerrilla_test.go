@@ -27,15 +27,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/flashmob/go-guerrilla/mail/rfc5321"
+	"github.com/mailnite/go-guerrilla/mail/rfc5321"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/flashmob/go-guerrilla"
-	"github.com/flashmob/go-guerrilla/backends"
-	"github.com/flashmob/go-guerrilla/log"
+	"github.com/mailnite/go-guerrilla"
+	"github.com/mailnite/go-guerrilla/backends"
+	"github.com/mailnite/go-guerrilla/log"
 
-	"github.com/flashmob/go-guerrilla/tests/testcert"
+	"github.com/mailnite/go-guerrilla/tests/testcert"
 )
 
 type TestConfig struct {

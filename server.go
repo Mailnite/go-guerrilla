@@ -17,11 +17,11 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/flashmob/go-guerrilla/backends"
-	"github.com/flashmob/go-guerrilla/log"
-	"github.com/flashmob/go-guerrilla/mail"
-	"github.com/flashmob/go-guerrilla/mail/rfc5321"
-	"github.com/flashmob/go-guerrilla/response"
+	"github.com/mailnite/go-guerrilla/backends"
+	"github.com/mailnite/go-guerrilla/log"
+	"github.com/mailnite/go-guerrilla/mail"
+	"github.com/mailnite/go-guerrilla/mail/rfc5321"
+	"github.com/mailnite/go-guerrilla/response"
 )
 
 const (

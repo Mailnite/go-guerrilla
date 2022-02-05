@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/flashmob/go-guerrilla/mail"
+	"github.com/mailnite/go-guerrilla/mail"
 
-	"github.com/flashmob/go-guerrilla/response"
+	"github.com/mailnite/go-guerrilla/response"
 )
 
 // ----------------------------------------------------------------------------------

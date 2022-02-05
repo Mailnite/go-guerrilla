@@ -9,8 +9,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/flashmob/go-guerrilla/log"
-	"github.com/flashmob/go-guerrilla/mail"
+	"github.com/mailnite/go-guerrilla/log"
+	"github.com/mailnite/go-guerrilla/mail"
 )
 
 var (

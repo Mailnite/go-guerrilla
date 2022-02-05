@@ -1,4 +1,4 @@
-module github.com/flashmob/go-guerrilla
+module github.com/mailnite/go-guerrilla
 
 go 1.14
 
