@@ -15,26 +15,25 @@
 package test
 
 import (
-	"encoding/json"
-	"github.com/flashmob/go-guerrilla/mail/rfc5321"
-	"testing"
-
-	"time"
-
-	"github.com/flashmob/go-guerrilla"
-	"github.com/flashmob/go-guerrilla/backends"
-	"github.com/flashmob/go-guerrilla/log"
-
 	"bufio"
-
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
-	"strings"
-
 	"os"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/flashmob/go-guerrilla/mail/rfc5321"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/flashmob/go-guerrilla"
+	"github.com/flashmob/go-guerrilla/backends"
+	"github.com/flashmob/go-guerrilla/log"
 
 	"github.com/flashmob/go-guerrilla/tests/testcert"
 )
@@ -900,71 +899,35 @@ func TestNestedMailCmd(t *testing.T) {
 		t.FailNow()
 	}
 	defer cleanTestArtifacts(t)
-	if startErrors := app.Start(); startErrors == nil {
-		conn, bufin, err := Connect(config.Servers[0], 20)
-		if err != nil {
-			// handle error
-			t.Error(err.Error(), config.Servers[0].ListenInterface)
-			t.FailNow()
-		} else {
-			// client goes into command state
-			if _, err := Command(conn, bufin, "HELO localtester"); err != nil {
-				t.Error("Hello command failed", err.Error())
-			}
-			// repeat > 64 characters in local part
-			response, err := Command(conn, bufin, "MAIL FROM:<test@grr.la>")
-			if err != nil {
-				t.Error("command failed", err.Error())
-			}
-			response, err = Command(conn, bufin, "MAIL FROM:<test@grr.la>")
-			if err != nil {
-				t.Error("command failed", err.Error())
-			}
-			expected := "503 5.5.1 Error: nested MAIL command"
-			if strings.Index(response, expected) != 0 {
-				t.Error("Server did not respond with", expected, ", it said:"+response)
-			}
-			// Plot twist: if you EHLO , it should allow MAIL FROM again
-			if _, err := Command(conn, bufin, "HELO localtester"); err != nil {
-				t.Error("Hello command failed", err.Error())
-			}
-			response, err = Command(conn, bufin, "MAIL FROM:<test@grr.la>")
-			if err != nil {
-				t.Error("command failed", err.Error())
-			}
-			expected = "250 2.1.0 OK"
-			if strings.Index(response, expected) != 0 {
-				t.Error("Server did not respond with", expected, ", it said:"+response)
-			}
-			// Plot twist: if you RSET , it should allow MAIL FROM again
-			response, err = Command(conn, bufin, "RSET")
-			if err != nil {
-				t.Error("command failed", err.Error())
-			}
-			expected = "250 2.1.0 OK"
-			if strings.Index(response, expected) != 0 {
-				t.Error("Server did not respond with", expected, ", it said:"+response)
-			}
+	require.NoError(t, app.Start())
+	conn, bufin, err := Connect(config.Servers[0], 20)
+	require.NoError(t, err)
+	// client goes into command state
+	_, err = Command(conn, bufin, "HELO localtester")
+	require.NoError(t, err)
+	// repeat > 64 characters in local part
+	_, err = Command(conn, bufin, "MAIL FROM:<test@grr.la>")
+	require.NoError(t, err)
+	response, err := Command(conn, bufin, "MAIL FROM:<test@grr.la>")
+	require.NoError(t, err)
+	assert.Equal(t, "503 5.5.1 Error: nested MAIL command\r\n", response)
+	// Plot twist: if you EHLO , it should allow MAIL FROM again
+	_, err = Command(conn, bufin, "HELO localtester")
+	require.NoError(t, err)
+	response, err = Command(conn, bufin, "MAIL FROM:<test@grr.la>")
+	require.NoError(t, err)
+	assert.Equal(t, "250 2.1.0 OK\r\n", response)
 
-			response, err = Command(conn, bufin, "MAIL FROM:<test@grr.la>")
-			if err != nil {
-				t.Error("command failed", err.Error())
-			}
-			expected = "250 2.1.0 OK"
-			if strings.Index(response, expected) != 0 {
-				t.Error("Server did not respond with", expected, ", it said:"+response)
-			}
+	// Plot twist: if you RSET , it should allow MAIL FROM again
+	response, err = Command(conn, bufin, "RSET")
+	require.NoError(t, err)
+	assert.Equal(t, "250 2.1.0 OK\r\n", response)
 
-		}
-		_ = conn.Close()
-		app.Shutdown()
-	} else {
-		if startErrors := app.Start(); startErrors != nil {
-			t.Error(startErrors)
-			app.Shutdown()
-			t.FailNow()
-		}
-	}
+	response, err = Command(conn, bufin, "MAIL FROM:<test@grr.la>")
+	require.NoError(t, err)
+	assert.Equal(t, "250 2.1.0 OK\r\n", response)
+	_ = conn.Close()
+	app.Shutdown()
 }
 
 // It should error on a very long command line, exceeding CommandLineMaxLength 1024
@@ -1029,31 +992,23 @@ func TestDataMaxLength(t *testing.T) {
 			}
 
 			response, err := Command(conn, bufin, "MAIL FROM:test@grr.la")
-			if err != nil {
-				t.Error("command failed", err.Error())
-			}
-			//fmt.Println(response)
+			require.NoError(t, err)
+			t.Log(response)
 			response, err = Command(conn, bufin, "RCPT TO:<test@grr.la>")
-			if err != nil {
-				t.Error("command failed", err.Error())
-			}
-			//fmt.Println(response)
+			require.NoError(t, err)
+			t.Log(response)
 			response, err = Command(conn, bufin, "DATA")
-			if err != nil {
-				t.Error("command failed", err.Error())
-			}
+			require.NoError(t, err)
+			t.Log(response)
 
 			response, err = Command(
 				conn,
 				bufin,
 				fmt.Sprintf("Subject:test\r\n\r\nHello %s\r\n.\r\n",
 					strings.Repeat("n", int(config.Servers[0].MaxSize-20))))
+			require.NoError(t, err)
 
-			//expected := "500 Line too long"
-			expected := "451 4.3.0 Error: maximum DATA size exceeded"
-			if strings.Index(response, expected) != 0 {
-				t.Error("Server did not respond with", expected, ", it said:"+response)
-			}
+			assert.Contains(t, response, "451 4.3.0 Error: maximum DATA size exceeded")
 
 		}
 		_ = conn.Close()
@@ -1074,9 +1029,6 @@ func TestDataCommand(t *testing.T) {
 		t.FailNow()
 	}
 	defer cleanTestArtifacts(t)
-	testHeader :=
-		"Subject: =?Shift_JIS?B?W4NYg06DRYNGg0GBRYNHg2qDYoNOg1ggg0GDSoNFg5ODZ12DQYNKg0WDk4Nn?=\r\n" +
-			"\t=?Shift_JIS?B?k2+YXoqul7mCzIKokm2C54K5?=\r\n"
 
 	email :=
 		"Delivered-To: test@sharklasers.com\r\n" +
@@ -1107,59 +1059,32 @@ func TestDataCommand(t *testing.T) {
 			"lamail.com=0ABlock or report abuse: https://www.guerrillamail.com//abuse/?a=\r\n" +
 			"=3DVURnES0HUaZbhA8%3D=0A\r\n.\r\n"
 
-	if startErrors := app.Start(); startErrors == nil {
-		conn, bufin, err := Connect(config.Servers[0], 20)
-		if err != nil {
-			// handle error
-			t.Error(err.Error(), config.Servers[0].ListenInterface)
-			t.FailNow()
-		} else {
-			// client goes into command state
-			if _, err := Command(conn, bufin, "HELO localtester"); err != nil {
-				t.Error("Hello command failed", err.Error())
-			}
+	require.NoError(t, app.Start())
+	defer app.Shutdown()
 
-			response, err := Command(conn, bufin, "MAIL FROM:<test@grr.la>")
-			if err != nil {
-				t.Error("command failed", err.Error())
-			}
-			//fmt.Println(response)
-			response, err = Command(conn, bufin, "RCPT TO:<test@grr.la>")
-			if err != nil {
-				t.Error("command failed", err.Error())
-			}
-			//fmt.Println(response)
-			response, err = Command(conn, bufin, "DATA")
-			if err != nil {
-				t.Error("command failed", err.Error())
-			}
-			/*
-				response, err = Command(
-					conn,
-					bufin,
-					testHeader+"\r\nHello World\r\n.\r\n")
-			*/
-			_ = testHeader
-			response, err = Command(
-				conn,
-				bufin,
-				email+"\r\n.\r\n")
-			//expected := "500 Line too long"
-			expected := "250 2.0.0 OK: queued as "
-			if strings.Index(response, expected) != 0 {
-				t.Error("Server did not respond with", expected, ", it said:"+response, err)
-			}
-
-		}
-		_ = conn.Close()
-		app.Shutdown()
-	} else {
-		if startErrors := app.Start(); startErrors != nil {
-			t.Error(startErrors)
-			app.Shutdown()
-			t.FailNow()
-		}
+	conn, bufin, err := Connect(config.Servers[0], 20)
+	require.NoError(t, err)
+	// client goes into command state
+	if _, err := Command(conn, bufin, "HELO localtester"); err != nil {
+		t.Error("Hello command failed", err.Error())
 	}
+
+	response, err := Command(conn, bufin, "MAIL FROM:<test@grr.la>")
+	require.NoError(t, err)
+	t.Log(response)
+	response, err = Command(conn, bufin, "RCPT TO:<test@grr.la>")
+	require.NoError(t, err)
+	t.Log(response)
+	response, err = Command(conn, bufin, "DATA")
+	require.NoError(t, err)
+	t.Log(response)
+	response, err = Command(
+		conn,
+		bufin,
+		email+"\r\n.\r\n")
+	require.NoError(t, err)
+	assert.Contains(t, response, "250 2.0.0 OK: queued as ")
+	require.NoError(t, conn.Close())
 }
 
 // Fuzzer crashed the server by submitting "DATA\r\n" as the first command

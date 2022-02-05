@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"net"
@@ -15,6 +14,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/flashmob/go-guerrilla/backends"
 	"github.com/flashmob/go-guerrilla/log"
@@ -48,7 +49,6 @@ type server struct {
 	timeout         atomic.Value // stores time.Duration
 	listenInterface string
 	clientPool      *Pool
-	wg              sync.WaitGroup // for waiting to shutdown
 	listener        net.Listener
 	closedListener  chan bool
 	hosts           allowedHosts // stores map[string]bool for faster lookup
@@ -229,10 +229,9 @@ func (s *server) setAllowedHosts(allowedHosts []string) {
 	}
 }
 
-// Begin accepting SMTP clients. Will block unless there is an error or server.Shutdown() is called
+// Start begins accepting SMTP clients. Will block unless there is an error or server.Shutdown() is called
 func (s *server) Start(startWG *sync.WaitGroup) error {
-	var clientID uint64
-	clientID = 0
+	var clientID uint64 = 0
 
 	listener, err := net.Listen("tcp", s.listenInterface)
 	s.listener = listener
